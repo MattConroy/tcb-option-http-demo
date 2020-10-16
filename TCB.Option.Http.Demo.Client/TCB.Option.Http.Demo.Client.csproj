@@ -7,6 +7,7 @@
 
   <ItemGroup>
     <PackageReference Include="Newtonsoft.Json" Version="12.0.3" />
+    <PackageReference Include="TCB.Option.Extensions.Http" Version="4.0.2" />
   </ItemGroup>
 
 </Project>

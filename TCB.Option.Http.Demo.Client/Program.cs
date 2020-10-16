@@ -1,7 +1,7 @@
-﻿using Newtonsoft.Json;
-using System;
+﻿using System;
 using System.Net.Http;
 using System.Threading.Tasks;
+using TCB.Option.Tasks;
 
 namespace TCB.Option.Http.Demo.Client
 {
@@ -13,49 +13,21 @@ namespace TCB.Option.Http.Demo.Client
 
             const string requestUri = "https://localhost:5001/demo";
 
-            var response = await SendRequest(client, requestUri)
+            await client.Request()
+                .GetAsync<ServerResponse>(requestUri)
+                .MatchAsync(OnRequestSuccess, OnRequestFailure)
                 .ConfigureAwait(false);
-
-            if (!response.IsSuccessStatusCode)
-                Console.WriteLine($"Request to '{requestUri}' failed. ({(int)response.StatusCode}) '{response.StatusCode}'");
-
-            var jsonContent = await response.Content
-                .ReadAsStringAsync()
-                .ConfigureAwait(false);
-
-            var content = DeserializeJson<ServerResponse>(requestUri, jsonContent);
-
-            Console.WriteLine($"Response returned at: '{content.Date.ToLongTimeString()}'." +
-                              $"{Environment.NewLine}Summary: '{content.Summary}'");
         }
 
-        private static async Task<HttpResponseMessage> SendRequest(HttpClient client, string requestUri)
+        private static void OnRequestSuccess(ServerResponse serverResponse)
         {
-            try
-            {
-                return await client
-                    .GetAsync(requestUri)
-                    .ConfigureAwait(false);
-            }
-            catch (HttpRequestException)
-            {
-                Console.WriteLine($"Request to '{requestUri}' failed.");
-                throw;
-            }
+            Console.WriteLine($"Response returned at: '{serverResponse.Date.ToLongTimeString()}'." +
+                              $"{Environment.NewLine}Summary: '{serverResponse.Summary}'");
         }
 
-        private static T DeserializeJson<T>(string requestUri, string jsonContent)
+        private static void OnRequestFailure(ErrorMessage errorMessage)
         {
-            try
-            {
-                return JsonConvert.DeserializeObject<T>(jsonContent);
-            }
-            catch (JsonException)
-            {
-                Console.WriteLine($"Request to '{requestUri}' failed to deserialize response as JSON." +
-                                  $"{Environment.NewLine}{jsonContent}");
-                throw;
-            }
+            throw new DemoRequestException(errorMessage);
         }
     }
 }
